@@ -1,32 +1,11 @@
 {
   "name": "limitwall",
+  "type": "module",
   "version": "0.1.0",
   "description": "Rate limiting middleware for Hono, backed by Redis. Fixed window, sliding window, token bucket, and leaky bucket (GCRA) in one package",
-  "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      },
-      "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
-      }
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "sideEffects": false,
-  "engines": {
-    "node": ">=20"
-  },
-  "license": "MIT",
   "author": "Kevin Rozario",
+  "license": "MIT",
+  "homepage": "https://github.com/Kevin-Rozario/limitwall#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Kevin-Rozario/limitwall.git"
@@ -34,7 +13,6 @@
   "bugs": {
     "url": "https://github.com/Kevin-Rozario/limitwall/issues"
   },
-  "homepage": "https://github.com/Kevin-Rozario/limitwall#readme",
   "keywords": [
     "hono",
     "rate-limit",
@@ -47,30 +25,27 @@
     "gcra",
     "middleware"
   ],
-  "peerDependencies": {
-    "hono": ">=4",
-    "ioredis": ">=5",
-    "@upstash/redis": ">=1"
-  },
-  "peerDependenciesMeta": {
-    "ioredis": {
-      "optional": true
-    },
-    "@upstash/redis": {
-      "optional": true
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
-  "devDependencies": {
-    "@antfu/eslint-config": "^3",
-    "@types/node": "^22",
-    "@upstash/redis": "^1",
-    "eslint": "^9",
-    "hono": "^4",
-    "ioredis": "^5",
-    "testcontainers": "^10",
-    "tsup": "^8",
-    "typescript": "^5",
-    "vitest": "^2"
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
   },
   "scripts": {
     "build": "tsup",
@@ -79,5 +54,31 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prepublishOnly": "pnpm run build"
+  },
+  "peerDependencies": {
+    "@upstash/redis": ">=1",
+    "hono": ">=4",
+    "ioredis": ">=5"
+  },
+  "peerDependenciesMeta": {
+    "@upstash/redis": {
+      "optional": true
+    },
+    "ioredis": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^3",
+    "@types/node": "^22",
+    "@upstash/redis": "^1",
+    "eslint": "^9",
+    "eslint-plugin-format": "^2.0.1",
+    "hono": "^4",
+    "ioredis": "^5",
+    "testcontainers": "^10",
+    "tsup": "^8",
+    "typescript": "^5",
+    "vitest": "^2"
   }
 }

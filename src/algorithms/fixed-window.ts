@@ -1,5 +1,6 @@
 import type { RateLimitStore } from "../store/types";
-import type { RateLimitResult, FixedWindowConfig } from "../types";
+import type { FixedWindowConfig, RateLimitResult } from "../types";
+
 import { buildKey } from "../key";
 
 /**

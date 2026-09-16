@@ -13,9 +13,9 @@ export interface RateLimitStore {
    * @param keys   Redis KEYS[] — the keys the script will touch.
    * @param args   Redis ARGV[] — plain values the script needs.
    */
-  eval<T>(
+  eval: <T>(
     script: string,
     keys: string[],
     args: (string | number)[],
-  ): Promise<T>;
+  ) => Promise<T>;
 }

@@ -1,5 +1,6 @@
 import type { RateLimitStore } from "../store/types";
-import type { RateLimitResult, LeakyBucketConfig } from "../types";
+import type { LeakyBucketConfig, RateLimitResult } from "../types";
+
 import { buildKey } from "../key";
 
 /**

@@ -1,11 +1,14 @@
 import type { Context } from "hono";
+
 import { createMiddleware } from "hono/factory";
+
 import type { RateLimitStore } from "./store/types";
 import type { RateLimitAlgorithmConfig, RateLimitResult } from "./types";
-import { checkTokenBucket } from "./algorithms/token-bucket";
+
 import { checkFixedWindow } from "./algorithms/fixed-window";
-import { checkSlidingWindow } from "./algorithms/sliding-window";
 import { checkLeakyBucket } from "./algorithms/leaky-bucket";
+import { checkSlidingWindow } from "./algorithms/sliding-window";
+import { checkTokenBucket } from "./algorithms/token-bucket";
 import { buildRateLimitHeaders, type HeaderStyle } from "./headers";
 
 /** Full config for `rateLimiter()`: one algorithm's config, plus shared options. */
@@ -57,7 +60,8 @@ export function rateLimiter(config: RateLimiterConfig) {
     let result: RateLimitResult;
     try {
       result = await runCheck(config, identifier);
-    } catch {
+    }
+    catch {
       // Store unreachable - do exactly what was explicitly configured.
       if (config.onError === "fail-open") {
         await next();
@@ -77,7 +81,8 @@ export function rateLimiter(config: RateLimiterConfig) {
     }
 
     if (!result.allowed) {
-      if (config.message) return config.message(c);
+      if (config.message)
+        return config.message(c);
       c.status(429);
       return c.json({ error: "Too many requests" });
     }

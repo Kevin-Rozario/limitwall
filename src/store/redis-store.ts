@@ -1,4 +1,5 @@
 import type { Redis } from "ioredis";
+
 import type { RateLimitStore } from "./types";
 
 /**
@@ -23,7 +24,7 @@ export class RedisStore implements RateLimitStore {
     keys: string[],
     args: (string | number)[],
   ): Promise<T> {
-    const commandName = "limitwall_" + hashScript(script);
+    const commandName = `limitwall_${hashScript(script)}`;
 
     if (!this.definedCommands.has(commandName)) {
       this.client.defineCommand(commandName, {

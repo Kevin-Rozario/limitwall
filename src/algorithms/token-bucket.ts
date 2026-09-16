@@ -1,5 +1,6 @@
 import type { RateLimitStore } from "../store/types";
 import type { RateLimitResult, TokenBucketConfig } from "../types";
+
 import { buildKey } from "../key";
 
 /**

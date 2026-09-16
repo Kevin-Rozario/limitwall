@@ -15,8 +15,8 @@ export function buildRateLimitHeaders(
   result: RateLimitResult,
   style: HeaderStyle = "draft-6",
 ): Record<string, string> {
-  const headers: Record<string, string> =
-    style === "draft-7"
+  const headers: Record<string, string>
+    = style === "draft-7"
       ? {
           RateLimit: `limit=${limit}, remaining=${
             result.remaining ?? 0
