@@ -18,7 +18,10 @@ export async function startRedisFixture(): Promise<RedisFixture> {
 }
 
 /** Tears down a fixture created by startRedisFixture. */
-export async function stopRedisFixture(fixture: RedisFixture): Promise<void> {
+export async function stopRedisFixture(
+  fixture: RedisFixture | undefined,
+): Promise<void> {
+  if (!fixture) return;
   await fixture.redis.quit();
   await fixture.container.stop();
 }
