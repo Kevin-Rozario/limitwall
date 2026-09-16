@@ -31,9 +31,11 @@ local allowed = allowAt <= now
 
 if allowed then
   redis.call('SET', KEYS[1], newTat, 'EX', math.ceil(burstOffset + emissionInterval))
-  return { 1, 0 }
+  return { 1, "0" }
 else
-  return { 0, allowAt - now }
+  -- Redis truncates Lua numbers to integers on return, silently dropping
+  -- the fractional part — return as a string to preserve sub-second precision.
+  return { 0, tostring(allowAt - now) }
 end
 `;
 
@@ -46,12 +48,13 @@ export async function checkLeakyBucket(
   const key = await buildKey(config.ruleName, "leakybucket", identifier);
   const cost = config.cost ?? 1;
 
-  const [allowed, waitSeconds] = await store.eval<[number, number]>(
+  const [allowed, waitSecondsRaw] = await store.eval<[number, string]>(
     LEAKY_BUCKET_SCRIPT,
     [key],
     [config.capacity, config.rate, cost],
   );
 
+  const waitSeconds = Number.parseFloat(waitSecondsRaw);
   const isAllowed = allowed === 1;
 
   return {

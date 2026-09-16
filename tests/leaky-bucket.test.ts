@@ -1,10 +1,11 @@
 import { afterAll, beforeAll, beforeEach, expect, it } from "vitest";
-import { RedisStore } from "../src/store/redis-store";
+
 import { checkLeakyBucket } from "../src/algorithms/leaky-bucket";
+import { RedisStore } from "../src/store/redis-store";
 import {
+  type RedisFixture,
   startRedisFixture,
   stopRedisFixture,
-  type RedisFixture,
 } from "./redis-fixture";
 
 let fixture: RedisFixture;
@@ -13,12 +14,12 @@ beforeAll(async () => {
   fixture = await startRedisFixture();
 }, 60000);
 
-afterAll(async () => {
-  await stopRedisFixture(fixture);
-});
-
 beforeEach(async () => {
   await fixture.redis.flushall();
+});
+
+afterAll(async () => {
+  await stopRedisFixture(fixture);
 });
 
 it("allows a request within capacity", async () => {
@@ -65,7 +66,7 @@ it("paces requests evenly instead of allowing a full re-burst", async () => {
   expect(blocked.allowed).toBe(false);
 
   // one emission interval at rate=2 is 0.5s - wait a bit past that
-  await new Promise((resolve) => setTimeout(resolve, 600));
+  await new Promise(resolve => setTimeout(resolve, 600));
 
   const afterWait = await checkLeakyBucket(store, "user-3", config);
   expect(afterWait.allowed).toBe(true);
@@ -84,5 +85,5 @@ it("rejects concurrent requests beyond the burst - proves atomicity", async () =
     Array.from({ length: 10 }, () => checkLeakyBucket(store, "user-4", config)),
   );
 
-  expect(results.filter((r) => r.allowed).length).toBe(5);
+  expect(results.filter(r => r.allowed).length).toBe(5);
 });

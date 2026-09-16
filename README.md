@@ -26,9 +26,10 @@ pnpm install @upstash/redis   # for edge/serverless runtimes
 ## Quick start - Node + Redis
 
 ```ts
-import { Hono } from "hono";
 import { serve } from "@hono/node-server";
+import { Hono } from "hono";
 import { Redis } from "ioredis";
+
 import { rateLimiter, RedisStore } from "limitwall";
 
 const app = new Hono();
@@ -41,7 +42,7 @@ app.use(
     ruleName: "api",
     capacity: 10,
     refillRate: 0.5,
-    identifier: (c) => c.req.header("x-forwarded-for") ?? "unknown",
+    identifier: c => c.req.header("x-forwarded-for") ?? "unknown",
     store,
     onError: "fail-open",
   }),
@@ -53,8 +54,9 @@ serve(app);
 ## Quick start - Cloudflare Workers + Upstash
 
 ```ts
-import { Hono } from "hono";
 import { Redis } from "@upstash/redis/cloudflare";
+import { Hono } from "hono";
+
 import { rateLimiter, UpstashStore } from "limitwall";
 
 const app = new Hono<{
@@ -71,7 +73,7 @@ app.use("/api/*", async (c, next) => {
     ruleName: "api",
     capacity: 5,
     rate: 2,
-    identifier: (c) => c.req.header("cf-connecting-ip") ?? "unknown",
+    identifier: c => c.req.header("cf-connecting-ip") ?? "unknown",
     store,
     onError: "fail-closed",
   })(c, next);

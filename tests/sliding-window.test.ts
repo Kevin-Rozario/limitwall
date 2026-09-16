@@ -1,10 +1,11 @@
 import { afterAll, beforeAll, beforeEach, expect, it } from "vitest";
-import { RedisStore } from "../src/store/redis-store";
+
 import { checkSlidingWindow } from "../src/algorithms/sliding-window";
+import { RedisStore } from "../src/store/redis-store";
 import {
+  type RedisFixture,
   startRedisFixture,
   stopRedisFixture,
-  type RedisFixture,
 } from "./redis-fixture";
 
 let fixture: RedisFixture;
@@ -13,12 +14,12 @@ beforeAll(async () => {
   fixture = await startRedisFixture();
 }, 60000);
 
-afterAll(async () => {
-  await stopRedisFixture(fixture);
-});
-
 beforeEach(async () => {
   await fixture.redis.flushall();
+});
+
+afterAll(async () => {
+  await stopRedisFixture(fixture);
 });
 
 it("allows a request within the limit", async () => {
@@ -50,12 +51,13 @@ it("does not allow a full extra burst right at the window boundary", async () =>
 
   // Cross the window boundary. A fixed-window algorithm would fully
   // reset here and allow another full burst - sliding window shouldn't.
-  await new Promise((resolve) => setTimeout(resolve, 2100));
+  await new Promise(resolve => setTimeout(resolve, 2100));
 
   let allowedAfterBoundary = 0;
   for (let i = 0; i < 4; i++) {
     const result = await checkSlidingWindow(store, "user-2", config);
-    if (result.allowed) allowedAfterBoundary++;
+    if (result.allowed)
+      allowedAfterBoundary++;
   }
 
   expect(allowedAfterBoundary).toBeLessThanOrEqual(4);
@@ -72,9 +74,8 @@ it("rejects concurrent requests beyond the limit - proves atomicity", async () =
 
   const results = await Promise.all(
     Array.from({ length: 10 }, () =>
-      checkSlidingWindow(store, "user-3", config),
-    ),
+      checkSlidingWindow(store, "user-3", config)),
   );
 
-  expect(results.filter((r) => r.allowed).length).toBe(5);
+  expect(results.filter(r => r.allowed).length).toBe(5);
 });

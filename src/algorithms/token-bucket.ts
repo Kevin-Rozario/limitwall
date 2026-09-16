@@ -36,7 +36,9 @@ end
 redis.call('HMSET', KEYS[1], 'tokens', tokens, 'lastRefill', now)
 redis.call('EXPIRE', KEYS[1], math.ceil(capacity / refillRate))
 
-return { allowed and 1 or 0, tokens }
+-- Redis truncates Lua numbers to integers on return, silently dropping
+-- the fractional part — return as a string to preserve partial-refill precision.
+return { allowed and 1 or 0, tostring(tokens) }
 `;
 
 /** Runs a token bucket check for one identifier under one rule. */
@@ -48,11 +50,13 @@ export async function checkTokenBucket(
   const key = await buildKey(config.ruleName, "tokenbucket", identifier);
   const cost = config.cost ?? 1;
 
-  const [allowed, tokensRemaining] = await store.eval<[number, number]>(
+  const [allowed, tokensRemainingRaw] = await store.eval<[number, string]>(
     TOKEN_BUCKET_SCRIPT,
     [key],
     [config.capacity, config.refillRate, cost],
   );
+
+  const tokensRemaining = Number.parseFloat(tokensRemainingRaw);
 
   const resetSeconds = Math.ceil(
     (config.capacity - tokensRemaining) / config.refillRate,

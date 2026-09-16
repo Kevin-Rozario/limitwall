@@ -58,7 +58,7 @@
   "peerDependencies": {
     "@upstash/redis": ">=1",
     "hono": ">=4",
-    "ioredis": ">=5"
+    "ioredis": "^5"
   },
   "peerDependenciesMeta": {
     "@upstash/redis": {

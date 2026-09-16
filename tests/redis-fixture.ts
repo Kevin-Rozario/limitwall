@@ -1,5 +1,5 @@
-import { GenericContainer, type StartedTestContainer } from "testcontainers";
 import Redis from "ioredis";
+import { GenericContainer, type StartedTestContainer } from "testcontainers";
 
 export interface RedisFixture {
   redis: Redis;
@@ -21,7 +21,8 @@ export async function startRedisFixture(): Promise<RedisFixture> {
 export async function stopRedisFixture(
   fixture: RedisFixture | undefined,
 ): Promise<void> {
-  if (!fixture) return;
+  if (!fixture)
+    return;
   await fixture.redis.quit();
   await fixture.container.stop();
 }
