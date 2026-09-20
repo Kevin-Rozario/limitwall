@@ -1,6 +1,5 @@
 import type { RateLimitStore } from "../store/types";
 import type { RateLimitResult, SlidingWindowConfig } from "../types";
-
 import { buildKey } from "../key";
 
 /**

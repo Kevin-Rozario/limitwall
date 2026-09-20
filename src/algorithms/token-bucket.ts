@@ -1,6 +1,5 @@
 import type { RateLimitStore } from "../store/types";
 import type { RateLimitResult, TokenBucketConfig } from "../types";
-
 import { buildKey } from "../key";
 
 /**
@@ -10,7 +9,7 @@ import { buildKey } from "../key";
  */
 const TOKEN_BUCKET_SCRIPT = `
 local capacity   = tonumber(ARGV[1])
-local refillRate = tonumber(ARGV[2])
+local rate = tonumber(ARGV[2])
 local cost       = tonumber(ARGV[3])
 
 local time = redis.call('TIME')
@@ -26,7 +25,7 @@ if tokens == nil then
 end
 
 local elapsed = now - lastRefill
-tokens = math.min(capacity, tokens + (elapsed * refillRate))
+tokens = math.min(capacity, tokens + (elapsed * rate))
 
 local allowed = tokens >= cost
 if allowed then
@@ -34,10 +33,10 @@ if allowed then
 end
 
 redis.call('HMSET', KEYS[1], 'tokens', tokens, 'lastRefill', now)
-redis.call('EXPIRE', KEYS[1], math.ceil(capacity / refillRate))
+redis.call('EXPIRE', KEYS[1], math.ceil(capacity / rate))
 
 -- Redis truncates Lua numbers to integers on return, silently dropping
--- the fractional part — return as a string to preserve partial-refill precision.
+-- the fractional part - return as a string to preserve partial-refill precision.
 return { allowed and 1 or 0, tostring(tokens) }
 `;
 
@@ -53,13 +52,13 @@ export async function checkTokenBucket(
   const [allowed, tokensRemainingRaw] = await store.eval<[number, string]>(
     TOKEN_BUCKET_SCRIPT,
     [key],
-    [config.capacity, config.refillRate, cost],
+    [config.capacity, config.rate, cost],
   );
 
   const tokensRemaining = Number.parseFloat(tokensRemainingRaw);
 
   const resetSeconds = Math.ceil(
-    (config.capacity - tokensRemaining) / config.refillRate,
+    (config.capacity - tokensRemaining) / config.rate,
   );
 
   return {

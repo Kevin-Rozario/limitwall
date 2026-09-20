@@ -1,17 +1,16 @@
 import type { Redis } from "ioredis";
-
 import type { RateLimitStore } from "./types";
 
 /**
  * Store backend for regular Node.js servers, backed by a persistent
- * connection via `ioredis`. Not for edge runtimes — use UpstashStore
+ * connection via `ioredis`. Not for edge runtimes - use UpstashStore
  * there instead, since ioredis depends on Node's networking APIs.
  *
  * Registers each unique script once via `defineCommand`, so ioredis
  * automatically uses the cached `EVALSHA` form after the first call
  * instead of resending the full script text every request.
  */
-export class RedisStore implements RateLimitStore {
+export class NodeRedisStore implements RateLimitStore {
   private readonly client: Redis;
   private readonly definedCommands = new Set<string>();
 

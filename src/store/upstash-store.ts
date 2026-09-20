@@ -1,5 +1,4 @@
 import type { Redis } from "@upstash/redis";
-
 import type { RateLimitStore } from "./types";
 
 /**
@@ -8,11 +7,11 @@ import type { RateLimitStore } from "./types";
  * connection. Use RedisStore instead on regular Node servers.
  *
  * Note: unlike ioredis, the Upstash SDK has no built-in script-caching
- * mechanism equivalent to `defineCommand` — every call sends the full
+ * mechanism equivalent to `defineCommand` - every call sends the full
  * script text over HTTP. This is an accepted tradeoff for edge runtimes,
  * not a bug: REST-over-HTTP has per-call overhead regardless.
  */
-export class UpstashStore implements RateLimitStore {
+export class UpstashRedisStore implements RateLimitStore {
   private readonly client: Redis;
 
   constructor(options: { client: Redis }) {

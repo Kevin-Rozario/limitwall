@@ -31,7 +31,7 @@ export interface TokenBucketConfig extends BaseAlgorithmConfig {
   /** Maximum tokens the bucket can hold (max burst size). */
   capacity: number;
   /** Tokens added back to the bucket per second. */
-  refillRate: number;
+  rate: number;
 }
 
 export interface FixedWindowConfig extends BaseAlgorithmConfig {

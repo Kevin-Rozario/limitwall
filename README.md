@@ -42,7 +42,7 @@ app.use(
     ruleName: "api",
     capacity: 10,
     refillRate: 0.5,
-    identifier: c => c.req.header("x-forwarded-for") ?? "unknown",
+    identifier: (c) => c.req.header("x-forwarded-for") ?? "unknown",
     store,
     onError: "fail-open",
   }),
@@ -73,7 +73,7 @@ app.use("/api/*", async (c, next) => {
     ruleName: "api",
     capacity: 5,
     rate: 2,
-    identifier: c => c.req.header("cf-connecting-ip") ?? "unknown",
+    identifier: (c) => c.req.header("cf-connecting-ip") ?? "unknown",
     store,
     onError: "fail-closed",
   })(c, next);
@@ -120,6 +120,28 @@ On every request:
 - `RateLimit: limit=..., remaining=..., reset=...` (draft-7, if configured)
 
 On a rejected leaky-bucket request, `Retry-After` is also set, telling the client exactly how long to wait. See the note under [Algorithms](#algorithms) - `RateLimit-Remaining`/`RateLimit-Reset` are not meaningful for `leakyBucket` outside of that rejection case.
+
+## Using the core without Hono
+
+`rateLimiter()` is a thin Hono wrapper around four plain async functions that have no framework dependency - only a store and an identifier string. They're exported directly for use in plain Node scripts, background jobs, or other frameworks:
+
+```ts
+import { checkTokenBucket, NodeRedisStore } from "limitwall";
+
+const store = new NodeRedisStore({ client: new Redis() });
+
+const result = await checkTokenBucket(store, "user-123", {
+  ruleName: "api",
+  capacity: 10,
+  rate: 0.5,
+});
+
+if (!result.allowed) {
+  // handle rejection yourself - no Hono context required
+}
+```
+
+The other three follow the same shape: `checkFixedWindow`, `checkSlidingWindow`, `checkLeakyBucket`.
 
 ## Development
 
