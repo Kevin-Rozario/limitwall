@@ -39,17 +39,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-
-      # No registry-url here - it makes actions/setup-node write an auth
-      # line that breaks the OIDC flow. npm defaults to registry.npmjs.org.
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-
+          node-version: 26
       - run: pnpm install --frozen-lockfile
-
-      # OIDC trusted publishing needs npm >= 11.5.1.
-      - run: npm install -g npm@latest
-
       - run: pnpm run build
       - run: npm publish --access public
