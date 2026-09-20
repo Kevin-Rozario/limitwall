@@ -30,10 +30,10 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { Redis } from "ioredis";
 
-import { rateLimiter, RedisStore } from "limitwall";
+import { rateLimiter, NodeRedisStore } from "limitwall";
 
 const app = new Hono();
-const store = new RedisStore({ client: new Redis() });
+const store = new NodeRedisStore({ client: new Redis() });
 
 app.use(
   "/api/*",
@@ -42,7 +42,7 @@ app.use(
     ruleName: "api",
     capacity: 10,
     refillRate: 0.5,
-    identifier: c => c.req.header("x-forwarded-for") ?? "unknown",
+    identifier: (c) => c.req.header("x-forwarded-for") ?? "unknown",
     store,
     onError: "fail-open",
   }),
@@ -57,14 +57,14 @@ serve(app);
 import { Redis } from "@upstash/redis/cloudflare";
 import { Hono } from "hono";
 
-import { rateLimiter, UpstashStore } from "limitwall";
+import { rateLimiter, UpstashRedisStore } from "limitwall";
 
 const app = new Hono<{
   Bindings: { UPSTASH_URL: string; UPSTASH_TOKEN: string };
 }>();
 
 app.use("/api/*", async (c, next) => {
-  const store = new UpstashStore({
+  const store = new UpstashRedisStore({
     client: new Redis({ url: c.env.UPSTASH_URL, token: c.env.UPSTASH_TOKEN }),
   });
 
@@ -73,7 +73,7 @@ app.use("/api/*", async (c, next) => {
     ruleName: "api",
     capacity: 5,
     rate: 2,
-    identifier: c => c.req.header("cf-connecting-ip") ?? "unknown",
+    identifier: (c) => c.req.header("cf-connecting-ip") ?? "unknown",
     store,
     onError: "fail-closed",
   })(c, next);
@@ -105,7 +105,7 @@ interface RateLimiterConfig {
   cost?: number;
 
   identifier: (c: Context) => string; // required - what to rate limit by
-  store: RateLimitStore; // RedisStore or UpstashStore
+  store: RateLimitStore; // NodeRedisStore or UpstashRedisStore
   onError: "fail-open" | "fail-closed"; // required - no silent default
   headerStyle?: "draft-6" | "draft-7"; // defaults to "draft-6"
   message?: (c: Context) => Response; // overrides the default 429 body
