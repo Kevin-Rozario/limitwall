@@ -98,18 +98,18 @@ Every algorithm also accepts `ruleName` (required - namespaces its Redis keys) a
 ## Config reference
 
 ```ts
-rateLimiter({
-  algorithm: "tokenBucket" | "fixedWindow" | "slidingWindow" | "leakyBucket",
-  ruleName: string,
+interface RateLimiterConfig {
+  algorithm: "tokenBucket" | "fixedWindow" | "slidingWindow" | "leakyBucket";
+  ruleName: string;
   // ...algorithm-specific fields, see table above
-  cost?: number,
+  cost?: number;
 
-  identifier: (c: Context) => string,   // required - what to rate limit by
-  store: RateLimitStore,                // RedisStore or UpstashStore
-  onError: "fail-open" | "fail-closed", // required - no silent default
-  headerStyle?: "draft-6" | "draft-7",  // defaults to "draft-6"
-  message?: (c: Context) => Response,   // overrides the default 429 body
-});
+  identifier: (c: Context) => string; // required - what to rate limit by
+  store: RateLimitStore; // RedisStore or UpstashStore
+  onError: "fail-open" | "fail-closed"; // required - no silent default
+  headerStyle?: "draft-6" | "draft-7"; // defaults to "draft-6"
+  message?: (c: Context) => Response; // overrides the default 429 body
+}
 ```
 
 ## Response headers
