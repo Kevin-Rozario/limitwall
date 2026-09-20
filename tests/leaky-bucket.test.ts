@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, expect, it } from "vitest";
 
 import { checkLeakyBucket } from "../src/algorithms/leaky-bucket";
-import { RedisStore } from "../src/store/redis-store";
+import { NodeRedisStore } from "../src/store/redis-store";
 import {
   type RedisFixture,
   startRedisFixture,
@@ -23,7 +23,7 @@ afterAll(async () => {
 });
 
 it("allows a request within capacity", async () => {
-  const store = new RedisStore({ client: fixture.redis });
+  const store = new NodeRedisStore({ client: fixture.redis });
   const config = {
     ruleName: "lb-1",
     algorithm: "leakyBucket" as const,
@@ -36,7 +36,7 @@ it("allows a request within capacity", async () => {
 });
 
 it("rejects a burst beyond capacity and reports a wait time", async () => {
-  const store = new RedisStore({ client: fixture.redis });
+  const store = new NodeRedisStore({ client: fixture.redis });
   const config = {
     ruleName: "lb-2",
     algorithm: "leakyBucket" as const,
@@ -53,7 +53,7 @@ it("rejects a burst beyond capacity and reports a wait time", async () => {
 });
 
 it("paces requests evenly instead of allowing a full re-burst", async () => {
-  const store = new RedisStore({ client: fixture.redis });
+  const store = new NodeRedisStore({ client: fixture.redis });
   const config = {
     ruleName: "lb-3",
     algorithm: "leakyBucket" as const,
@@ -73,7 +73,7 @@ it("paces requests evenly instead of allowing a full re-burst", async () => {
 });
 
 it("rejects concurrent requests beyond the burst - proves atomicity", async () => {
-  const store = new RedisStore({ client: fixture.redis });
+  const store = new NodeRedisStore({ client: fixture.redis });
   const config = {
     ruleName: "lb-4",
     algorithm: "leakyBucket" as const,

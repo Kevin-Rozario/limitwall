@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, expect, it } from "vitest";
 
 import { checkFixedWindow } from "../src/algorithms/fixed-window";
-import { RedisStore } from "../src/store/redis-store";
+import { NodeRedisStore } from "../src/store/redis-store";
 import {
   type RedisFixture,
   startRedisFixture,
@@ -23,7 +23,7 @@ afterAll(async () => {
 });
 
 it("allows requests within the limit", async () => {
-  const store = new RedisStore({ client: fixture.redis });
+  const store = new NodeRedisStore({ client: fixture.redis });
   const config = {
     ruleName: "fw-1",
     algorithm: "fixedWindow" as const,
@@ -37,7 +37,7 @@ it("allows requests within the limit", async () => {
 });
 
 it("rejects once the limit is hit within the window", async () => {
-  const store = new RedisStore({ client: fixture.redis });
+  const store = new NodeRedisStore({ client: fixture.redis });
   const config = {
     ruleName: "fw-2",
     algorithm: "fixedWindow" as const,
@@ -53,7 +53,7 @@ it("rejects once the limit is hit within the window", async () => {
 });
 
 it("resets once the window expires", async () => {
-  const store = new RedisStore({ client: fixture.redis });
+  const store = new NodeRedisStore({ client: fixture.redis });
   const config = {
     ruleName: "fw-3",
     algorithm: "fixedWindow" as const,
@@ -72,7 +72,7 @@ it("resets once the window expires", async () => {
 });
 
 it("rejects concurrent requests beyond the limit - proves atomicity", async () => {
-  const store = new RedisStore({ client: fixture.redis });
+  const store = new NodeRedisStore({ client: fixture.redis });
   const config = {
     ruleName: "fw-4",
     algorithm: "fixedWindow" as const,

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, expect, it } from "vitest";
 
 import { checkSlidingWindow } from "../src/algorithms/sliding-window";
-import { RedisStore } from "../src/store/redis-store";
+import { NodeRedisStore } from "../src/store/redis-store";
 import {
   type RedisFixture,
   startRedisFixture,
@@ -23,7 +23,7 @@ afterAll(async () => {
 });
 
 it("allows a request within the limit", async () => {
-  const store = new RedisStore({ client: fixture.redis });
+  const store = new NodeRedisStore({ client: fixture.redis });
   const config = {
     ruleName: "sw-1",
     algorithm: "slidingWindow" as const,
@@ -36,7 +36,7 @@ it("allows a request within the limit", async () => {
 });
 
 it("does not allow a full extra burst right at the window boundary", async () => {
-  const store = new RedisStore({ client: fixture.redis });
+  const store = new NodeRedisStore({ client: fixture.redis });
   const config = {
     ruleName: "sw-2",
     algorithm: "slidingWindow" as const,
@@ -64,7 +64,7 @@ it("does not allow a full extra burst right at the window boundary", async () =>
 });
 
 it("rejects concurrent requests beyond the limit - proves atomicity", async () => {
-  const store = new RedisStore({ client: fixture.redis });
+  const store = new NodeRedisStore({ client: fixture.redis });
   const config = {
     ruleName: "sw-3",
     algorithm: "slidingWindow" as const,

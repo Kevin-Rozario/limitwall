@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, expect, it } from "vitest";
 
 import { checkTokenBucket } from "../src/algorithms/token-bucket";
-import { RedisStore } from "../src/store/redis-store";
+import { NodeRedisStore } from "../src/store/redis-store";
 import {
   type RedisFixture,
   startRedisFixture,
@@ -23,12 +23,12 @@ afterAll(async () => {
 });
 
 it("allows a request within capacity", async () => {
-  const store = new RedisStore({ client: fixture.redis });
+  const store = new NodeRedisStore({ client: fixture.redis });
   const config = {
     ruleName: "tb-1",
     algorithm: "tokenBucket" as const,
     capacity: 5,
-    refillRate: 1,
+    rate: 1,
   };
 
   const result = await checkTokenBucket(store, "user-1", config);
@@ -37,12 +37,12 @@ it("allows a request within capacity", async () => {
 });
 
 it("rejects once the bucket is empty", async () => {
-  const store = new RedisStore({ client: fixture.redis });
+  const store = new NodeRedisStore({ client: fixture.redis });
   const config = {
     ruleName: "tb-2",
     algorithm: "tokenBucket" as const,
     capacity: 3,
-    refillRate: 1,
+    rate: 1,
   };
 
   for (let i = 0; i < 3; i++) await checkTokenBucket(store, "user-2", config);
@@ -52,12 +52,12 @@ it("rejects once the bucket is empty", async () => {
 });
 
 it("refills over time", async () => {
-  const store = new RedisStore({ client: fixture.redis });
+  const store = new NodeRedisStore({ client: fixture.redis });
   const config = {
     ruleName: "tb-3",
     algorithm: "tokenBucket" as const,
     capacity: 2,
-    refillRate: 5,
+    rate: 5,
   };
 
   await checkTokenBucket(store, "user-3", config);
@@ -72,12 +72,12 @@ it("refills over time", async () => {
 });
 
 it("rejects concurrent requests beyond capacity - proves atomicity", async () => {
-  const store = new RedisStore({ client: fixture.redis });
+  const store = new NodeRedisStore({ client: fixture.redis });
   const config = {
     ruleName: "tb-4",
     algorithm: "tokenBucket" as const,
     capacity: 5,
-    refillRate: 1,
+    rate: 1,
   };
 
   const results = await Promise.all(
