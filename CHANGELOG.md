@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.2
+
+No functional or source code changes. Fixes the automated release pipeline: the publish job's Node version was bumped to satisfy npm's Trusted Publishing (OIDC) requirements after a `npm@latest` upgrade step broke on an older Node version.
+
+## 1.0.1
+
+No functional or source code changes. Published to validate the automated tag-triggered release pipeline end-to-end (later replaced with OIDC Trusted Publishing in 1.0.2's release process).
+
 ## 1.0.0
 
 Initial stable release.
@@ -31,3 +39,7 @@ Initial stable release.
 - `ioredis` peer dependency is pinned to `^5`; `^6` is not yet tested
 - No Cloudflare Durable Objects store yet
 - No built-in multi-rule composition (`combineRules()`) - stack multiple `rateLimiter()` middlewares instead
+
+## 0.1.0
+
+Initial development release, published while the four algorithms and stores were still being built and tested. Superseded by 1.0.0.
