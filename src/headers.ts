@@ -15,16 +15,22 @@ export function buildRateLimitHeaders(
   result: RateLimitResult,
   style: HeaderStyle = "draft-6",
 ): Record<string, string> {
+  // RateLimit-Remaining is specified as a whole-number count of requests,
+  // not fractional tokens - floor it here, at the presentation layer, so
+  // the underlying result (result.remaining) keeps its real precision for
+  // any code that reads it directly.
+  const remaining = Math.floor(result.remaining ?? 0);
+
   const headers: Record<string, string>
     = style === "draft-7"
       ? {
           RateLimit: `limit=${limit}, remaining=${
-            result.remaining ?? 0
+            remaining ?? 0
           }, reset=${result.resetSeconds}`,
         }
       : {
           "RateLimit-Limit": String(limit),
-          "RateLimit-Remaining": String(result.remaining ?? 0),
+          "RateLimit-Remaining": String(remaining),
           "RateLimit-Reset": String(result.resetSeconds),
         };
 

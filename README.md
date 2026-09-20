@@ -42,7 +42,7 @@ app.use(
     ruleName: "api",
     capacity: 10,
     refillRate: 0.5,
-    identifier: (c) => c.req.header("x-forwarded-for") ?? "unknown",
+    identifier: c => c.req.header("x-forwarded-for") ?? "unknown",
     store,
     onError: "fail-open",
   }),
@@ -73,7 +73,7 @@ app.use("/api/*", async (c, next) => {
     ruleName: "api",
     capacity: 5,
     rate: 2,
-    identifier: (c) => c.req.header("cf-connecting-ip") ?? "unknown",
+    identifier: c => c.req.header("cf-connecting-ip") ?? "unknown",
     store,
     onError: "fail-closed",
   })(c, next);
