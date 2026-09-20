@@ -42,7 +42,7 @@ app.use(
     ruleName: "api",
     capacity: 10,
     refillRate: 0.5,
-    identifier: c => c.req.header("x-forwarded-for") ?? "unknown",
+    identifier: (c) => c.req.header("x-forwarded-for") ?? "unknown",
     store,
     onError: "fail-open",
   }),
@@ -73,7 +73,7 @@ app.use("/api/*", async (c, next) => {
     ruleName: "api",
     capacity: 5,
     rate: 2,
-    identifier: c => c.req.header("cf-connecting-ip") ?? "unknown",
+    identifier: (c) => c.req.header("cf-connecting-ip") ?? "unknown",
     store,
     onError: "fail-closed",
   })(c, next);
@@ -84,14 +84,16 @@ export default app;
 
 ## Algorithms
 
-| Algorithm       | Config fields            | Behavior                                                                              |
-| --------------- | ------------------------ | ------------------------------------------------------------------------------------- |
-| `fixedWindow`   | `limit`, `windowSeconds` | Simplest. Resets on the dot every window; allows a burst right at the boundary.       |
-| `slidingWindow` | `limit`, `windowSeconds` | Blends the current and previous window's counts, avoiding the boundary-burst problem. |
-| `tokenBucket`   | `capacity`, `refillRate` | Bucket refills continuously; allows saved-up bursts up to `capacity`.                 |
-| `leakyBucket`   | `capacity`, `rate`       | Implemented as GCRA. Smooths traffic into an even pace rather than allowing bursts.   |
+| Algorithm       | Config fields            | Behavior                                                                                                                          |
+| --------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| `fixedWindow`   | `limit`, `windowSeconds` | Simplest. Resets on the dot every window; allows a burst right at the boundary.                                                   |
+| `slidingWindow` | `limit`, `windowSeconds` | Blends the current and previous window's counts, avoiding the boundary-burst problem.                                             |
+| `tokenBucket`   | `capacity`, `refillRate` | Bucket refills continuously; allows saved-up bursts up to `capacity`.                                                             |
+| `leakyBucket`   | `capacity`, `rate`       | Implemented as GCRA. Smooths traffic into an even pace rather than allowing bursts. See note below on `remaining`/`reset` values. |
 
 Every algorithm also accepts `ruleName` (required - namespaces its Redis keys) and `cost` (optional, defaults to `1`).
+
+> **Note on `leakyBucket`:** unlike the other three algorithms, GCRA doesn't track a discrete "count remaining" - it tracks a single theoretical arrival time. As a result, `RateLimit-Remaining` and `RateLimit-Reset` are not meaningful on **allowed** `leakyBucket` requests and will read `0`. This is expected, not a bug. The value that _is_ meaningful for this algorithm is `Retry-After`, which is only set on **rejected** requests and tells the caller exactly how long to wait.
 
 ## Config reference
 
@@ -117,7 +119,7 @@ On every request:
 - `RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset` (draft-6, default), or
 - `RateLimit: limit=..., remaining=..., reset=...` (draft-7, if configured)
 
-On a rejected leaky-bucket request, `Retry-After` is also set, telling the client exactly how long to wait.
+On a rejected leaky-bucket request, `Retry-After` is also set, telling the client exactly how long to wait. See the note under [Algorithms](#algorithms) - `RateLimit-Remaining`/`RateLimit-Reset` are not meaningful for `leakyBucket` outside of that rejection case.
 
 ## Development
 
