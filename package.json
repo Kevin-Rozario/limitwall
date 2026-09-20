@@ -2,6 +2,7 @@
   "name": "limitwall",
   "type": "module",
   "version": "0.1.0",
+  "packageManager": "pnpm@12.5.1",
   "description": "Rate limiting middleware for Hono, backed by Redis. Fixed window, sliding window, token bucket, and leaky bucket (GCRA) in one package",
   "author": "Kevin Rozario",
   "license": "MIT",
