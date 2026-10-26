@@ -22,8 +22,6 @@ export interface RateLimitResult {
 interface BaseAlgorithmConfig {
   /** Unique name for this rule; namespaces its Redis keys from other rules. */
   ruleName: string;
-  /** Cost of a single request, in whatever unit the algorithm counts. Defaults to 1. */
-  cost?: number;
 }
 
 export interface TokenBucketConfig extends BaseAlgorithmConfig {
@@ -32,6 +30,8 @@ export interface TokenBucketConfig extends BaseAlgorithmConfig {
   capacity: number;
   /** Tokens added back to the bucket per second. */
   rate: number;
+  /** Cost of a single request in tokens. Defaults to 1. */
+  cost?: number;
 }
 
 export interface FixedWindowConfig extends BaseAlgorithmConfig {
@@ -56,11 +56,13 @@ export interface LeakyBucketConfig extends BaseAlgorithmConfig {
   capacity: number;
   /** Sustained requests allowed per second. */
   rate: number;
+  /** Cost of a single request in emission units. Defaults to 1. */
+  cost?: number;
 }
 
 /**
  * Discriminated union of every algorithm's config, tagged by `algorithm`.
- * Picking `algorithm: "tokenBucket"` requires `capacity` + `refillRate`;
+ * Picking `algorithm: "tokenBucket"` requires `capacity` + `rate`;
  * TypeScript rejects the wrong field set for whichever algorithm is chosen.
  */
 export type RateLimitAlgorithmConfig =

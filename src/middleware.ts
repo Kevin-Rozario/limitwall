@@ -5,11 +5,8 @@ import { createMiddleware } from "hono/factory";
 import type { RateLimitStore } from "./store/types";
 import type { RateLimitAlgorithmConfig, RateLimitResult } from "./types";
 
-import { checkFixedWindow } from "./algorithms/fixed-window";
-import { checkLeakyBucket } from "./algorithms/leaky-bucket";
-import { checkSlidingWindow } from "./algorithms/sliding-window";
-import { checkTokenBucket } from "./algorithms/token-bucket";
 import { buildRateLimitHeaders, type HeaderStyle } from "./headers";
+import { getLimitValue, runCheck } from "./run-check";
 
 /** Full config for `rateLimiter()`: one algorithm's config, plus shared options. */
 export type RateLimiterConfig = RateLimitAlgorithmConfig & {
@@ -23,33 +20,30 @@ export type RateLimiterConfig = RateLimitAlgorithmConfig & {
   message?: (c: Context) => Response;
 };
 
-/** Resolves the configured limit/capacity, regardless of which algorithm is active. */
-function getLimitValue(config: RateLimiterConfig): number {
-  switch (config.algorithm) {
-    case "tokenBucket":
-    case "leakyBucket":
-      return config.capacity;
-    case "fixedWindow":
-    case "slidingWindow":
-      return config.limit;
-  }
-}
-
-/** Runs the configured algorithm's check function. */
-async function runCheck(
+/** Writes RateLimit headers and either rejects with 429 or continues. */
+export async function applyRateLimitResult(
+  c: Context,
+  next: () => Promise<void>,
   config: RateLimiterConfig,
-  identifier: string,
-): Promise<RateLimitResult> {
-  switch (config.algorithm) {
-    case "tokenBucket":
-      return checkTokenBucket(config.store, identifier, config);
-    case "fixedWindow":
-      return checkFixedWindow(config.store, identifier, config);
-    case "slidingWindow":
-      return checkSlidingWindow(config.store, identifier, config);
-    case "leakyBucket":
-      return checkLeakyBucket(config.store, identifier, config);
+  result: RateLimitResult,
+): Promise<Response | void> {
+  const headers = buildRateLimitHeaders(
+    getLimitValue(config),
+    result,
+    config.headerStyle,
+  );
+  for (const [key, value] of Object.entries(headers)) {
+    c.header(key, value);
   }
+
+  if (!result.allowed) {
+    if (config.message)
+      return config.message(c);
+    c.status(429);
+    return c.json({ error: "Too many requests" });
+  }
+
+  await next();
 }
 
 /** Creates a Hono rate-limiting middleware for the given config. */
@@ -71,22 +65,6 @@ export function rateLimiter(config: RateLimiterConfig) {
       return c.json({ error: "Rate limiter unavailable" });
     }
 
-    const headers = buildRateLimitHeaders(
-      getLimitValue(config),
-      result,
-      config.headerStyle,
-    );
-    for (const [key, value] of Object.entries(headers)) {
-      c.header(key, value);
-    }
-
-    if (!result.allowed) {
-      if (config.message)
-        return config.message(c);
-      c.status(429);
-      return c.json({ error: "Too many requests" });
-    }
-
-    await next();
+    return applyRateLimitResult(c, next, config, result);
   });
 }

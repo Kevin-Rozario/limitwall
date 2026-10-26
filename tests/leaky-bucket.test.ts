@@ -72,6 +72,43 @@ it("paces requests evenly instead of allowing a full re-burst", async () => {
   expect(afterWait.allowed).toBe(true);
 });
 
+it("treats omitted cost as 1", async () => {
+  const store = new NodeRedisStore({ client: fixture.redis });
+  const config = {
+    ruleName: "lb-cost-default",
+    algorithm: "leakyBucket" as const,
+    capacity: 2,
+    rate: 1,
+  };
+
+  const first = await checkLeakyBucket(store, "user-cost-1", config);
+  const second = await checkLeakyBucket(store, "user-cost-1", config);
+  const third = await checkLeakyBucket(store, "user-cost-1", config);
+
+  expect(first.allowed).toBe(true);
+  expect(second.allowed).toBe(true);
+  expect(third.allowed).toBe(false);
+});
+
+it("spends an explicit cost greater than 1", async () => {
+  const store = new NodeRedisStore({ client: fixture.redis });
+  const config = {
+    ruleName: "lb-cost-explicit",
+    algorithm: "leakyBucket" as const,
+    capacity: 4,
+    rate: 1,
+    cost: 2,
+  };
+
+  const first = await checkLeakyBucket(store, "user-cost-2", config);
+  const second = await checkLeakyBucket(store, "user-cost-2", config);
+  const third = await checkLeakyBucket(store, "user-cost-2", config);
+
+  expect(first.allowed).toBe(true);
+  expect(second.allowed).toBe(true);
+  expect(third.allowed).toBe(false);
+});
+
 it("rejects concurrent requests beyond the burst - proves atomicity", async () => {
   const store = new NodeRedisStore({ client: fixture.redis });
   const config = {

@@ -71,6 +71,47 @@ it("refills over time", async () => {
   expect(afterRefill.allowed).toBe(true);
 });
 
+it("treats omitted cost as 1", async () => {
+  const store = new NodeRedisStore({ client: fixture.redis });
+  const config = {
+    ruleName: "tb-cost-default",
+    algorithm: "tokenBucket" as const,
+    capacity: 3,
+    rate: 1,
+  };
+
+  const first = await checkTokenBucket(store, "user-cost-1", config);
+  const second = await checkTokenBucket(store, "user-cost-1", config);
+  const third = await checkTokenBucket(store, "user-cost-1", config);
+  const fourth = await checkTokenBucket(store, "user-cost-1", config);
+
+  expect(first.remaining).toBe(2);
+  expect(second.remaining).toBe(1);
+  expect(third.remaining).toBe(0);
+  expect(fourth.allowed).toBe(false);
+});
+
+it("spends an explicit cost greater than 1", async () => {
+  const store = new NodeRedisStore({ client: fixture.redis });
+  const config = {
+    ruleName: "tb-cost-explicit",
+    algorithm: "tokenBucket" as const,
+    capacity: 5,
+    rate: 1,
+    cost: 2,
+  };
+
+  const first = await checkTokenBucket(store, "user-cost-2", config);
+  const second = await checkTokenBucket(store, "user-cost-2", config);
+  const third = await checkTokenBucket(store, "user-cost-2", config);
+
+  expect(first.allowed).toBe(true);
+  expect(first.remaining).toBe(3);
+  expect(second.allowed).toBe(true);
+  expect(second.remaining).toBe(1);
+  expect(third.allowed).toBe(false);
+});
+
 it("rejects concurrent requests beyond capacity - proves atomicity", async () => {
   const store = new NodeRedisStore({ client: fixture.redis });
   const config = {

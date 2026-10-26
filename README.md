@@ -12,6 +12,7 @@ Works on regular Node servers (via `ioredis`) and edge/serverless runtimes like 
 - **Privacy-conscious keys** - identifiers (IPs, user IDs, etc.) are hashed before ever touching Redis
 - **No silent defaults on failure** - you explicitly choose fail-open or fail-closed behavior when Redis is unreachable
 - **Standard headers** - both IETF `RateLimit-*` header drafts supported, plus `Retry-After`
+- **Multi-rule composition** - `combineRules()` evaluates several rules in one middleware; stacking `rateLimiter()` still works
 
 ## Install
 
@@ -41,7 +42,7 @@ app.use(
     algorithm: "tokenBucket",
     ruleName: "api",
     capacity: 10,
-    refillRate: 0.5,
+    rate: 0.5,
     identifier: c => c.req.header("x-forwarded-for") ?? "unknown",
     store,
     onError: "fail-open",
@@ -88,10 +89,10 @@ export default app;
 | --------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
 | `fixedWindow`   | `limit`, `windowSeconds` | Simplest. Resets on the dot every window; allows a burst right at the boundary.                                                   |
 | `slidingWindow` | `limit`, `windowSeconds` | Blends the current and previous window's counts, avoiding the boundary-burst problem.                                             |
-| `tokenBucket`   | `capacity`, `refillRate` | Bucket refills continuously; allows saved-up bursts up to `capacity`.                                                             |
+| `tokenBucket`   | `capacity`, `rate`       | Bucket refills continuously; allows saved-up bursts up to `capacity`.                                                             |
 | `leakyBucket`   | `capacity`, `rate`       | Implemented as GCRA. Smooths traffic into an even pace rather than allowing bursts. See note below on `remaining`/`reset` values. |
 
-Every algorithm also accepts `ruleName` (required - namespaces its Redis keys) and `cost` (optional, defaults to `1`).
+Every algorithm also accepts `ruleName` (required - namespaces its Redis keys). `tokenBucket` and `leakyBucket` also accept `cost` (optional, defaults to `1`). Window algorithms always count one request.
 
 > **Note on `leakyBucket`:** unlike the other three algorithms, GCRA doesn't track a discrete "count remaining" - it tracks a single theoretical arrival time. As a result, `RateLimit-Remaining` and `RateLimit-Reset` are not meaningful on **allowed** `leakyBucket` requests and will read `0`. This is expected, not a bug. The value that _is_ meaningful for this algorithm is `Retry-After`, which is only set on **rejected** requests and tells the caller exactly how long to wait.
 
@@ -102,7 +103,7 @@ interface RateLimiterConfig {
   algorithm: "tokenBucket" | "fixedWindow" | "slidingWindow" | "leakyBucket";
   ruleName: string;
   // ...algorithm-specific fields, see table above
-  cost?: number;
+  // cost?: number — tokenBucket and leakyBucket only, defaults to 1
 
   identifier: (c: Context) => string; // required - what to rate limit by
   store: RateLimitStore; // NodeRedisStore or UpstashRedisStore
@@ -110,6 +111,40 @@ interface RateLimiterConfig {
   headerStyle?: "draft-6" | "draft-7"; // defaults to "draft-6"
   message?: (c: Context) => Response; // overrides the default 429 body
 }
+```
+
+## Combining rules
+
+`combineRules()` takes an array of the same configs you would pass to `rateLimiter()`. Rules run in order. The first reject wins and later rules are not charged. On allow, headers come from the rule with the lowest remaining (or the last rule if none report remaining, as with leaky bucket). Each rule still uses one Redis round trip.
+
+Stacking multiple `rateLimiter()` middlewares remains valid.
+
+```ts
+import { combineRules, NodeRedisStore } from "limitwall";
+
+app.use(
+  "/api/*",
+  combineRules([
+    {
+      algorithm: "fixedWindow",
+      ruleName: "per-ip",
+      limit: 100,
+      windowSeconds: 60,
+      identifier: c => c.req.header("x-forwarded-for") ?? "unknown",
+      store,
+      onError: "fail-closed",
+    },
+    {
+      algorithm: "tokenBucket",
+      ruleName: "per-user",
+      capacity: 20,
+      rate: 1,
+      identifier: c => c.get("userId") ?? "anon",
+      store,
+      onError: "fail-closed",
+    },
+  ]),
+);
 ```
 
 ## Response headers

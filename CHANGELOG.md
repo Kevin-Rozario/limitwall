@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.1.0
+
+### Added
+
+- `combineRules()` - one middleware that evaluates several rules in order. Short-circuits on the first reject (later rules are not charged). On allow, `RateLimit-*` headers come from the rule with the lowest remaining, or the last evaluated rule when none report remaining.
+- Tests for `rateLimiter()`: fail-open, fail-closed, draft-6/draft-7 headers, custom 429 `message`, and leaky-bucket `Retry-After`.
+
+### Breaking (types only)
+
+- `cost` is valid only on `tokenBucket` and `leakyBucket`. Passing it on `fixedWindow` or `slidingWindow` is now a TypeScript error. Runtime never used `cost` on window algorithms.
+
+### Docs
+
+- Token bucket field is `rate`, not `refillRate`.
+
+Each composed rule is still one Redis round trip (not a single multi-key Lua script). Stacking `rateLimiter()` middlewares remains supported.
+
 ## 1.0.2
 
 No functional or source code changes. Fixes the automated release pipeline: the publish job's Node version was bumped to satisfy npm's Trusted Publishing (OIDC) requirements after a `npm@latest` upgrade step broke on an older Node version.
@@ -38,7 +55,6 @@ Initial stable release.
 - `leakyBucket` does not expose a meaningful `remaining`/`reset` value on allowed requests (GCRA has no discrete count to report) - only `Retry-After` on rejection is meaningful for this algorithm
 - `ioredis` peer dependency is pinned to `^5`; `^6` is not yet tested
 - No Cloudflare Durable Objects store yet
-- No built-in multi-rule composition (`combineRules()`) - stack multiple `rateLimiter()` middlewares instead
 
 ## 0.1.0
 
