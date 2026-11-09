@@ -145,3 +145,5 @@ vite.config.ts.timestamp-*
 # Local planning / editor tooling
 .cursor/
 openspec/
+.DS_Store
+bench/results.txt
