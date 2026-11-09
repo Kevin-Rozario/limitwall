@@ -2,7 +2,6 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { Redis } from "ioredis";
-//
 // ALGO=none|fixedWindow|slidingWindow|tokenBucket|leakyBucket
 // ID_MODE=single (one hot key) | random (new key per request)
 // ONERROR=fail-open|fail-closed
