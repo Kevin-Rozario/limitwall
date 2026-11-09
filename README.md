@@ -10,7 +10,7 @@ Works on regular Node servers (via `ioredis`) and edge/serverless runtimes like 
 - **Atomic by design** - every check runs as a single Lua script inside Redis, so concurrent requests can't race past the limit
 - **Edge-ready** - the Upstash store works anywhere `fetch` exists, no persistent connection required
 - **Privacy-conscious keys** - identifiers (IPs, user IDs, etc.) are hashed before ever touching Redis
-- **No silent defaults on failure** - you explicitly choose fail-open or fail-closed behavior when Redis is unreachable
+- **No silent defaults on failure** - you explicitly choose fail-open or fail-closed behavior when Redis is unreachable, and a built-in timeout makes that decision fast
 - **Standard headers** - both IETF `RateLimit-*` header drafts supported, plus `Retry-After`
 - **Multi-rule composition** - `combineRules()` evaluates several rules in one middleware; stacking `rateLimiter()` still works
 
@@ -108,10 +108,17 @@ interface RateLimiterConfig {
   identifier: (c: Context) => string; // required - what to rate limit by
   store: RateLimitStore; // NodeRedisStore or UpstashRedisStore
   onError: "fail-open" | "fail-closed"; // required - no silent default
+  timeoutMs?: number; // max wait for Redis before onError applies, defaults to 1000
   headerStyle?: "draft-6" | "draft-7"; // defaults to "draft-6"
   message?: (c: Context) => Response; // overrides the default 429 body
 }
 ```
+
+## When Redis is unreachable
+
+`onError` decides what happens when a check fails: `"fail-open"` lets the request through, `"fail-closed"` responds with `503`.
+
+A check that takes longer than `timeoutMs` (default 1000 ms) counts as a failure. Requests therefore resolve in about one second instead of waiting on your Redis client's own retry and connection timeouts. A timed-out check may still finish inside Redis shortly afterwards; the limiter simply stops waiting for it.
 
 ## Combining rules
 
@@ -178,6 +185,10 @@ if (!result.allowed) {
 
 The other three follow the same shape: `checkFixedWindow`, `checkSlidingWindow`, `checkLeakyBucket`.
 
+## Performance
+
+Measured on a MacBook Air with Redis 7 in Docker, Hono on Node, 100 concurrent connections (autocannon, 15 s per run): about 25,000-29,000 requests/s with p50 3 ms and p99 of 5-8 ms per rate-limited request, using 164-238 bytes of Redis memory per tracked identifier depending on the algorithm. The same app without a limiter served about 100,000 requests/s, so each check costs one Redis round trip. The load generator, server and Redis shared one machine, and results vary with hardware and network. Reproduce with `bash bench/benchmark.sh`.
+
 ## Development
 
 ```bash
@@ -187,7 +198,7 @@ pnpm run test       # vitest, spins up real Redis via Testcontainers
 pnpm run lint       # eslint (antfu config)
 ```
 
-Tests use [Testcontainers](https://node.testcontainers.org/) to run against a real, disposable Redis instance - Docker must be running locally.
+Tests use [Testcontainers](https://node.testcontainers.org/) to run against a real, disposable Redis instance - Docker must be running locally. The suite includes concurrency tests that send 1,000 requests over 20 separate connections and assert that exactly the configured limit is allowed, for every algorithm.
 
 ## License
 

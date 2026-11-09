@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.2.0
+
+### Added
+
+- `timeoutMs` option (default 1000 ms): a store call that takes longer counts as a failure, and `onError` applies. Previously an unreachable Redis could hang requests for 10-16 s because of the ioredis connect and retry defaults.
+- Concurrency tests: 1,000 requests over 20 separate Redis connections allow exactly the configured limit, for all four algorithms.
+- Sliding-window boundary test and token-bucket refill-precision test.
+- Benchmark scripts in `bench/` (`bash bench/benchmark.sh`).
+
+### Fixed
+
+- Token bucket used whole-second Redis time, so a drained bucket at 5 tokens/s took up to about 1 s to refill instead of 200 ms. It now uses microsecond time (measured: about 218 ms).
+- Sliding window now keeps both window counters in one hash under its single declared key, so the script touches only declared keys (Redis Cluster safe by construction; not yet tested on a real cluster). The key format changed, so sliding-window counters reset once on upgrade.
+
+### Changed
+
+- Token bucket `remaining` now has sub-second precision, so it may read e.g. `1.0009` instead of exactly `1` between rapid calls.
+
 ## 1.1.0
 
 ### Added
