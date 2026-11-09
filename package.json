@@ -71,14 +71,17 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^3",
+    "@hono/node-server": "^2.1.6",
     "@types/node": "^22",
     "@upstash/redis": "^1",
+    "autocannon": "^9.0.0",
     "eslint": "^9",
     "eslint-plugin-format": "^2.0.1",
     "hono": "^4",
     "ioredis": "^5",
     "testcontainers": "^10",
     "tsup": "^8",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^2"
   }
