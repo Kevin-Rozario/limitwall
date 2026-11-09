@@ -14,7 +14,7 @@ local rate = tonumber(ARGV[2])
 local cost       = tonumber(ARGV[3])
 
 local time = redis.call('TIME')
-local now = tonumber(time[1])
+local now = tonumber(time[1]) + (tonumber(time[2]) / 1000000)
 
 local bucket = redis.call('HMGET', KEYS[1], 'tokens', 'lastRefill')
 local tokens = tonumber(bucket[1])

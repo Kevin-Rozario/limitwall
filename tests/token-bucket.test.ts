@@ -33,6 +33,7 @@ it("allows a request within capacity", async () => {
 
   const result = await checkTokenBucket(store, "user-1", config);
   expect(result.allowed).toBe(true);
+  // A brand-new bucket has no elapsed time, so this is exact.
   expect(result.remaining).toBe(4);
 });
 
@@ -85,9 +86,11 @@ it("treats omitted cost as 1", async () => {
   const third = await checkTokenBucket(store, "user-cost-1", config);
   const fourth = await checkTokenBucket(store, "user-cost-1", config);
 
-  expect(first.remaining).toBe(2);
-  expect(second.remaining).toBe(1);
-  expect(third.remaining).toBe(0);
+  // Microsecond clock: a few ms of refill between calls is expected,
+  // so compare within +/-0.5 token instead of requiring exact integers.
+  expect(first.remaining).toBeCloseTo(2, 0);
+  expect(second.remaining).toBeCloseTo(1, 0);
+  expect(third.remaining).toBeCloseTo(0, 0);
   expect(fourth.allowed).toBe(false);
 });
 
@@ -106,9 +109,9 @@ it("spends an explicit cost greater than 1", async () => {
   const third = await checkTokenBucket(store, "user-cost-2", config);
 
   expect(first.allowed).toBe(true);
-  expect(first.remaining).toBe(3);
+  expect(first.remaining).toBeCloseTo(3, 0);
   expect(second.allowed).toBe(true);
-  expect(second.remaining).toBe(1);
+  expect(second.remaining).toBeCloseTo(1, 0);
   expect(third.allowed).toBe(false);
 });
 
