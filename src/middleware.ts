@@ -15,6 +15,8 @@ export type RateLimiterConfig = RateLimitAlgorithmConfig & {
   store: RateLimitStore;
   /** Required, explicit behavior when the store is unreachable — no silent default. */
   onError: "fail-open" | "fail-closed";
+  /** Max time to wait for the store before treating it as unreachable. Defaults to 1000 ms. */
+  timeoutMs?: number;
   headerStyle?: HeaderStyle;
   /** Overrides the default 429 JSON body. */
   message?: (c: Context) => Response;
